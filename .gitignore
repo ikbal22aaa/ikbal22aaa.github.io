@@ -1,7 +1,5 @@
 config_local.php
 .htaccess
-config_local.php
-.htaccess
 # Allow hosting_ready.sql but keep other potential exports ignored
 *.sql
 !hosting_ready.sql
