@@ -1,0 +1,6 @@
+config_local.php
+.htaccess
+*.sql
+node_modules/
+.DS_Store
+Thumbs.db
