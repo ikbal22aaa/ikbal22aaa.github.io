@@ -99,19 +99,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <textarea name="address" class="form-control" rows="3" required><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
                     </div>
 
-                    <h3 style="margin: 2rem 0 1rem;">Paiement</h3>
-                    <div style="padding: 1rem; border: 1px solid #cbd5e1; border-radius: 0.5rem; background: #f8fafc; display: flex; align-items: center; gap: 1rem;">
-                        <input type="radio" checked disabled>
-                        <div>
-                            <span style="font-weight: 600;">Paiement à la livraison</span>
-                            <p style="font-size: 0.9rem; color: #64748b;">Payez en espèces lorsque vous recevez votre commande.</p>
+                    <div class="form-group" style="margin-top: 2rem;">
+                        <label class="form-label">Mode de paiement</label>
+                        <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+                            <label style="flex: 1; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;" id="label-cod">
+                                <input type="radio" name="payment_method" value="cod" checked onchange="togglePayment('cod')">
+                                <div>
+                                    <span style="font-weight: 600; display: block;">Paiement à la livraison</span>
+                                    <span style="font-size: 0.8rem; color: #64748b;">Payez en espèces à la réception.</span>
+                                </div>
+                            </label>
+                            <label style="flex: 1; padding: 1rem; border: 2px solid #e2e8f0; border-radius: 0.5rem; cursor: pointer; display: flex; align-items: center; gap: 0.5rem;" id="label-paypal">
+                                <input type="radio" name="payment_method" value="paypal" onchange="togglePayment('paypal')">
+                                <div>
+                                    <span style="font-weight: 600; display: block;">PayPal</span>
+                                    <span style="font-size: 0.8rem; color: #64748b;">Paiement sécurisé en ligne.</span>
+                                </div>
+                            </label>
                         </div>
                     </div>
 
-                    <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 2rem; padding: 1rem; font-size: 1.1rem;">Confirmer la commande</button>
+                    <div id="cod-container">
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem; font-size: 1.1rem;">Confirmer la commande (COD)</button>
+                    </div>
+
+                    <div id="paypal-button-container" style="display: none; margin-top: 1rem;"></div>
                 </form>
             </div>
         </div>
+
+        <script src="https://www.paypal.com/sdk/js?client-id=<?= PAYPAL_CLIENT_ID ?>&currency=USD"></script>
+        <script>
+        function togglePayment(method) {
+            document.getElementById('cod-container').style.display = method === 'cod' ? 'block' : 'none';
+            document.getElementById('paypal-button-container').style.display = method === 'paypal' ? 'block' : 'none';
+            
+            // Highlight selected
+            document.getElementById('label-cod').style.borderColor = method === 'cod' ? 'var(--primary-color)' : '#e2e8f0';
+            document.getElementById('label-paypal').style.borderColor = method === 'paypal' ? 'var(--primary-color)' : '#e2e8f0';
+        }
+
+        // Initialize view
+        togglePayment('cod');
+
+        paypal.Buttons({
+            createOrder: function() {
+                return fetch('paypal_create_order.php', {
+                    method: 'POST'
+                }).then(function(res) {
+                    return res.json();
+                }).then(function(data) {
+                    return data.id;
+                });
+            },
+            onApprove: function(data) {
+                const address = document.querySelector('textarea[name="address"]').value;
+                return fetch('paypal_capture_order.php', {
+                    method: 'POST',
+                    headers: { 'content-type': 'application/json' },
+                    body: JSON.stringify({
+                        orderID: data.orderID,
+                        shipping_address: address
+                    })
+                }).then(function(res) {
+                    return res.json();
+                }).then(function(details) {
+                    if (details.status === 'success') {
+                        window.location.href = 'thank_you.php?order=' + details.order_id;
+                    } else {
+                        alert('Erreur lors de la capture du paiement : ' + (details.error || 'Erreur inconnue'));
+                    }
+                });
+            }
+        }).render('#paypal-button-container');
+        </script>
 
         <!-- Summary Side -->
         <div style="flex: 1; min-width: 250px;">

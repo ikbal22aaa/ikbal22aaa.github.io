@@ -62,6 +62,11 @@ $orders = $pdo->query("
                             <span style="padding: 2px 8px; border-radius: 4px; background: #e2e8f0; font-size: 0.85rem;">
                                 <?= htmlspecialchars($o['status']) ?>
                             </span>
+                            <?php if ($o['payment_method'] === 'paypal'): ?>
+                                <div style="font-size: 0.75rem; color: #64748b; margin-top: 5px;">
+                                    PayPal ID: <?= htmlspecialchars($o['paypal_order_id']) ?>
+                                </div>
+                            <?php endif; ?>
                         </td>
                         <td><?= htmlspecialchars(substr($o['shipping_address'], 0, 30)) ?>...</td>
                         <td><?= date('d/m/Y H:i', strtotime($o['created_at'])) ?></td>
